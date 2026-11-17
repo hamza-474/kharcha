@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Kharcha — a private personal expense tracker. Record income and expenses, see your running balance, category totals and monthly summaries.">
+<title>Kharcha · {% block title %}{% endblock %}</title>
+<link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+      </span>
+      <span class="brand-name">Kharcha</span>
+      <span class="brand-tag">Personal Expense Tracker</span>
+    </a>
+    <div class="topbar-actions">
+      {% if session.get('user_id') %}
+      <span class="hello">Hello, <b>{{ session.get('username') }}</b></span>
+      <a class="btn btn-primary" href="{{ url_for('add') }}">+ Add entry</a>
+      <a class="btn btn-ghost" href="{{ url_for('logout') }}">Log out</a>
+      {% else %}
+      <a class="btn btn-ghost" href="{{ url_for('login') }}">Log in</a>
+      <a class="btn btn-primary" href="{{ url_for('register') }}">Create account</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-stack">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}" role="alert">
+      <span>{{ message }}</span>
+      <button type="button" aria-label="Dismiss" onclick="this.parentElement.remove()">&times;</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+  {% block main %}{% endblock %}
+</main>
+
+<footer class="site">Kharcha — know where your money goes. Your data belongs to your account only.</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

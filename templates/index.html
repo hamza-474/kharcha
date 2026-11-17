@@ -1,0 +1,126 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block main %}
+{% set cat_colors = {
+  'Food': '#e8833a', 'Transport': '#2563eb', 'Rent': '#7c5cd6', 'Utilities': '#0e9f9f',
+  'Shopping': '#d6538c', 'Entertainment': '#b97e10', 'Health': '#d64545', 'Education': '#3a7bd5',
+  'Salary': '#0e8560', 'Freelance': '#5aa469', 'Other': '#8496ad'
+} %}
+
+<section class="hero rise d1">
+  <div>
+    <p class="label">Running balance</p>
+    <p class="balance">Rs <span data-count="{{ balance }}">{{ balance | money }}</span></p>
+    <p class="hint">Income minus expenses, across all your entries.</p>
+  </div>
+  <div class="cta"><a class="btn-hero" href="{{ url_for('add') }}">+ Add an entry</a></div>
+</section>
+
+<section class="stat-grid rise d2">
+  <div class="card stat">
+    <span class="ic ic-in"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M9 7h8v8"/></svg></span>
+    <div><p class="k">Total income</p><p class="v">Rs <span data-count="{{ income }}">{{ income | money }}</span></p></div>
+  </div>
+  <div class="card stat">
+    <span class="ic ic-out"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10"/><path d="M17 9v8H9"/></svg></span>
+    <div><p class="k">Total expenses</p><p class="v">Rs <span data-count="{{ expense }}">{{ expense | money }}</span></p></div>
+  </div>
+  <div class="card stat">
+    <span class="ic ic-net"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span>
+    <div><p class="k">Entries tracked</p><p class="v">{{ entries | length }}</p></div>
+  </div>
+</section>
+
+{% if entries %}
+<div class="grid-2 rise d3">
+  <section class="card">
+    <h2>Where the money went</h2>
+    <p class="sub">Your expense categories, biggest first.</p>
+    {% for c in expense_cats %}
+    <div class="cat-row">
+      <span class="name"><span class="dot" style="background: {{ cat_colors.get(c.category, '#8496ad') }}"></span>{{ c.category }}</span>
+      <span class="bar"><i style="--w: {{ c.bar }}%"></i></span>
+      <span class="amt">Rs {{ c.total | money }}<small>{{ c.share }}% of expenses</small></span>
+    </div>
+    {% endfor %}
+    {% if not expense_cats %}<p class="sub">No expenses recorded yet.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Last {{ monthly_chart | length }} months</h2>
+    <p class="sub">Income vs expenses per month.</p>
+    <div class="chart">
+      {% for m in monthly_chart %}
+      <div class="col">
+        <div class="bars">
+          <i class="b-in" style="--h: {{ m.income_h }}%" title="Income Rs {{ m.income | money }}"></i>
+          <i class="b-out" style="--h: {{ m.expense_h }}%" title="Expenses Rs {{ m.expense | money }}"></i>
+        </div>
+        <span class="m">{{ m.month | monthname }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background: var(--green-600)"></i> Income</span>
+      <span><i class="sw" style="background: #f59a9a"></i> Expenses</span>
+    </div>
+  </section>
+</div>
+
+<section class="card rise d4">
+  <h2>All entries</h2>
+  <p class="sub">Newest first. Deleting an entry updates every total immediately.</p>
+  <div class="table-wrap">
+    <table class="entries">
+      <thead>
+        <tr><th>Date</th><th>Category</th><th>Note</th><th class="amt">Amount</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td class="date-cell">{{ e.date | humandate }}</td>
+          <td><span class="pill"><span class="dot" style="background: {{ cat_colors.get(e.category, '#8496ad') }}"></span>{{ e.category }}</span></td>
+          <td class="note-cell">{{ e.note or '—' }}</td>
+          <td class="amt {{ 'amt-in' if e.kind == 'income' else 'amt-out' }}">{{ '+' if e.kind == 'income' else '−' }} Rs {{ e.amount | money }}</td>
+          <td><form method="post" action="{{ url_for('delete', entry_id=e.id) }}"><button class="btn-danger-ghost" type="submit">Delete</button></form></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% else %}
+<section class="card empty rise d3">
+  <div class="big" aria-hidden="true">🧾</div>
+  <h3>No entries yet</h3>
+  <p>Add your first income or expense and Kharcha will start building your balance, category totals and monthly summary.</p>
+  <a class="btn btn-primary" href="{{ url_for('add') }}">+ Add your first entry</a>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Count-up animation for the money figures (progressive enhancement:
+// the server-rendered values are already in place if JS is off).
+(function () {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var fmt = function (n) {
+    return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+  document.querySelectorAll("[data-count]").forEach(function (el) {
+    var target = parseFloat(el.getAttribute("data-count"));
+    if (isNaN(target)) return;
+    var start = null, dur = 900;
+    function tick(ts) {
+      if (!start) start = ts;
+      var p = Math.min((ts - start) / dur, 1);
+      var eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(target * eased);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+})();
+</script>
+{% endblock %}
