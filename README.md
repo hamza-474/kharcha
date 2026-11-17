@@ -4,6 +4,8 @@
 
 Record income and expenses in seconds, and Kharcha keeps your running balance, per-category totals and a month-by-month summary up to date — no spreadsheets, no guesswork.
 
+**🌐 Live demo: [kharcha-40qt.onrender.com](https://kharcha-40qt.onrender.com)** — create a free account and try it in the browser. (Hosted on a free tier, so the first load after a quiet spell can take up to a minute.)
+
 ![Kharcha dashboard](docs/dashboard.png)
 
 ## Features
